@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bestellaufnahme (Pro)</title>
+    <title>Büro & Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -11,370 +11,177 @@
         .search-results { max-height: 250px; overflow-y: auto; position: absolute; width: 100%; z-index: 50; background: white; border: 1px solid #e5e7eb; display: none; }
         .search-results div { padding: 12px; cursor: pointer; border-bottom: 1px solid #f3f4f6; transition: 0.2s; }
         .search-results div:hover { background-color: #eff6ff; }
-        input[type=number]::-webkit-inner-spin-button, 
-        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .status-open { background-color: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        .status-packed { background-color: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+        .status-delivered { background-color: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .status-failed { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
     </style>
 </head>
 <body class="pb-20 text-gray-800">
 
     <div class="bg-slate-800 text-white p-4 shadow-lg sticky top-0 z-40">
-        <div class="flex justify-between items-center max-w-5xl mx-auto">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                <i class="fas fa-desktop"></i> Bestellsystem <span class="text-xs bg-yellow-500 text-black px-1 rounded">PRO</span>
-            </h1>
-            <button onclick="window.location.reload()" class="text-xs bg-slate-600 px-3 py-1.5 rounded hover:bg-slate-500 transition">
-                <i class="fas fa-sync"></i> Neu laden
-            </button>
+        <div class="flex justify-between items-center max-w-6xl mx-auto">
+            <h1 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-desktop"></i> Admin Panel <span class="text-xs bg-yellow-500 text-black px-1 rounded">MASTER</span></h1>
+            <button onclick="window.location.reload()" class="text-xs bg-slate-600 px-3 py-1.5 rounded hover:bg-slate-500 transition"><i class="fas fa-sync"></i> Refresh</button>
         </div>
     </div>
 
-    <div class="max-w-5xl mx-auto p-4 space-y-6">
+    <div class="max-w-6xl mx-auto p-4 space-y-8">
 
-        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 relative">
-            <h2 class="text-lg font-bold text-gray-700 mb-4 border-b pb-2 flex items-center gap-2">
-                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">1</span> Kunde auswählen
-            </h2>
-            
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i class="fas fa-search text-gray-400"></i>
+        <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2"><span class="bg-blue-600 text-white text-sm px-2 py-1 rounded">NEU</span> Neue Bestellung aufnehmen</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="relative">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">1. Kunde:</label>
+                    <input type="text" id="customerSearch" placeholder="Suche..." class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" onkeyup="searchCustomer()" autocomplete="off">
+                    <div id="customerResults" class="search-results rounded-b-lg shadow-xl"></div>
+                    <div id="selectedCustomerCard" class="hidden mt-2 p-3 bg-green-50 border border-green-200 rounded-lg flex justify-between items-center"><div><div id="custRestaurant" class="font-bold text-green-900"></div><div id="custNameText" class="text-xs text-gray-600"></div></div><button onclick="clearCustomer()" class="text-red-500 text-sm hover:underline">X</button></div>
                 </div>
-                <input type="text" id="customerSearch" placeholder="Kunde suchen..." 
-                       class="w-full pl-10 p-3 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"
-                       onkeyup="searchCustomer()" autocomplete="off">
-                <div id="customerResults" class="search-results rounded-b-lg shadow-xl"></div>
+                <div id="productSection" class="relative opacity-50 pointer-events-none">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">2. Produkt:</label>
+                    <input type="text" id="productSearch" placeholder="Suche..." class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" onkeyup="searchProduct()" autocomplete="off">
+                    <div id="productResults" class="search-results rounded-b-lg shadow-xl"></div>
+                </div>
             </div>
-
-            <div id="selectedCustomerCard" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex justify-between items-center animate-fade-in">
-                <div>
-                    <h3 id="custRestaurant" class="font-bold text-green-900 text-lg"></h3>
-                    <p id="custName" class="text-sm text-gray-600 mt-1"><i class="fas fa-user mr-1"></i> <span id="custNameText"></span></p>
-                    <p id="custAddr" class="text-xs text-gray-500 mt-1"><i class="fas fa-map-marker-alt mr-1"></i> <span id="custAddrText"></span></p>
-                </div>
-                <button onclick="clearCustomer()" class="text-red-500 hover:text-red-700 text-sm font-semibold border border-red-200 px-3 py-1 rounded bg-white hover:bg-red-50 transition">
-                    Ändern
-                </button>
+            <div id="cartSection" class="mt-6 hidden">
+                <table class="w-full text-sm text-left border-collapse"><thead class="bg-gray-100 text-gray-600 uppercase text-xs"><tr><th class="p-2">Produkt</th><th class="p-2 text-center">Menge</th><th class="p-2 text-center">Preis</th><th class="p-2 text-center">Summe</th><th class="p-2"></th></tr></thead><tbody id="cartTableBody" class="divide-y divide-gray-100"></tbody></table>
+                <div class="flex justify-between items-center mt-4 pt-4 border-t"><div class="text-xl font-bold text-blue-800">Total: <span id="cartTotal">0.00</span> CHF</div><div class="flex gap-2"><input type="date" id="deliveryDate" class="border rounded p-2"><button onclick="submitOrder()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2 rounded shadow">Speichern</button></div></div>
+                <input type="text" id="orderNote" placeholder="Notiz (optional)..." class="w-full mt-2 p-2 border rounded text-sm bg-gray-50">
             </div>
         </div>
 
-        <div id="productSection" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 opacity-50 pointer-events-none transition duration-300">
-            <h2 class="text-lg font-bold text-gray-700 mb-4 border-b pb-2 flex items-center gap-2">
-                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">2</span> Produkte hinzufügen
-            </h2>
-            
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i class="fas fa-box-open text-gray-400"></i>
-                </div>
-                <input type="text" id="productSearch" placeholder="Produkt suchen..." 
-                       class="w-full pl-10 p-3 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"
-                       onkeyup="searchProduct()" autocomplete="off">
-                <div id="productResults" class="search-results rounded-b-lg shadow-xl"></div>
+        <div class="bg-slate-100 p-6 rounded-xl shadow-inner border border-slate-300">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-chart-line text-purple-600"></i> Live Monitor</h2>
+                <div class="flex gap-2 items-center"><label class="text-sm font-bold">Datum:</label><input type="date" id="monitorDate" class="p-2 border rounded shadow-sm text-sm" onchange="loadDashboard()"><button onclick="loadDashboard()" class="bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700 shadow"><i class="fas fa-search"></i></button></div>
             </div>
-        </div>
-
-        <div id="cartSection" class="bg-white p-6 rounded-lg shadow-lg border border-blue-100 hidden">
-            <div class="flex justify-between items-center mb-4 border-b pb-2">
-                <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    <i class="fas fa-shopping-cart text-blue-600"></i> Warenkorb
-                </h2>
-                <span id="cartTotal" class="text-2xl font-bold text-blue-800">0.00 CHF</span>
-            </div>
-
             <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left border-collapse">
-                    <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+                <table class="w-full text-sm text-left bg-white rounded-lg shadow overflow-hidden">
+                    <thead class="bg-slate-700 text-white uppercase text-xs"><tr><th class="p-3">Kunde</th><th class="p-3">Status (Live)</th><th class="p-3">Total</th><th class="p-3">Info</th><th class="p-3 text-right">Details</th></tr></thead>
+                    <tbody id="dashboardTable" class="divide-y divide-gray-200"><tr><td colspan="5" class="p-4 text-center text-gray-400">Lade Daten...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="bg-green-50 p-6 rounded-xl shadow border border-green-200">
+            <h2 class="text-xl font-bold text-green-900 mb-4 flex items-center gap-2"><i class="fas fa-sack-dollar"></i> Fahrer Finanzen (Tagesabschluss)</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left bg-white rounded-lg shadow overflow-hidden">
+                    <thead class="bg-green-700 text-white uppercase text-xs">
                         <tr>
-                            <th class="p-3 w-1/3">Produkt</th>
-                            <th class="p-3 text-center w-1/4">Menge</th>
-                            <th class="p-3 text-center w-1/4">Preis (CHF)</th>
-                            <th class="p-3 text-center">Summe</th>
-                            <th class="p-3 text-center"></th>
+                            <th class="p-3">Datum</th>
+                            <th class="p-3">Fahrer</th>
+                            <th class="p-3 text-right">Einnahmen (Bar)</th>
+                            <th class="p-3 text-right">Ausgaben (Tank)</th>
+                            <th class="p-3 text-right font-bold">ABGABE (Total)</th>
                         </tr>
                     </thead>
-                    <tbody id="cartTableBody" class="divide-y divide-gray-100">
+                    <tbody id="financeTable" class="divide-y divide-gray-200">
                         </tbody>
                 </table>
             </div>
-
-            <div class="mt-8 pt-6 border-t grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-gray-700 font-bold text-sm mb-2">📅 Lieferdatum:</label>
-                    <input type="date" id="deliveryDate" class="w-full p-3 border rounded bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-blue-400">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-bold text-sm mb-2">📝 Notiz:</label>
-                    <input type="text" id="orderNote" placeholder="..." class="w-full p-3 border rounded bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-blue-400">
-                </div>
-            </div>
-
-            <button onclick="submitOrder()" class="w-full mt-8 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg shadow-md text-lg transition transform active:scale-[0.98] flex justify-center items-center gap-2">
-                ✅ Bestellung absenden
-            </button>
         </div>
 
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCY9TmJwzoJRWFTAjhDFBD0eFMR4YKTHJQ",
-            authDomain: "listapp-96713.firebaseapp.com",
-            projectId: "listapp-96713",
-            storageBucket: "listapp-96713.firebasestorage.app",
-            messagingSenderId: "1044312662356",
-            appId: "1:1044312662356:web:64fd48530c4238127828c1"
-        };
-
+        const firebaseConfig = { apiKey: "AIzaSyCY9TmJwzoJRWFTAjhDFBD0eFMR4YKTHJQ", authDomain: "listapp-96713.firebaseapp.com", projectId: "listapp-96713", storageBucket: "listapp-96713.firebasestorage.app", messagingSenderId: "1044312662356", appId: "1:1044312662356:web:64fd48530c4238127828c1" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let allCustomers = [];
-        let allProducts = [];
-        let selectedCustomer = null;
-        let cart = [];
+        let allCustomers = [], allProducts = [], cart = [], selectedCustomer = null;
 
         window.onload = async function() {
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
             document.getElementById('deliveryDate').valueAsDate = tomorrow;
+            document.getElementById('monitorDate').valueAsDate = tomorrow;
 
-            const custSnapshot = await getDocs(collection(db, "bexio_contacts"));
-            custSnapshot.forEach(doc => {
-                allCustomers.push({ id: doc.id, ...doc.data() });
-            });
-
-            const prodSnapshot = await getDocs(collection(db, "products"));
-            prodSnapshot.forEach(doc => {
-                allProducts.push({ id: doc.id, ...doc.data() });
-            });
+            const custSnap = await getDocs(collection(db, "bexio_contacts")); custSnap.forEach(doc => allCustomers.push({ id: doc.id, ...doc.data() }));
+            const prodSnap = await getDocs(collection(db, "products")); prodSnap.forEach(doc => allProducts.push({ id: doc.id, ...doc.data() }));
 
             console.log("Ready.");
+            loadDashboard();
+            loadFinanceReport(); // فراخوانی تابع جدید مالی
         };
 
-        window.searchCustomer = function() {
-            const query = document.getElementById('customerSearch').value.toLowerCase();
-            const resultsDiv = document.getElementById('customerResults');
-            resultsDiv.innerHTML = '';
-            
-            if (query.length < 2) { resultsDiv.style.display = 'none'; return; }
+        // --- ORDER LOGIC ---
+        window.searchCustomer = function() { const query = document.getElementById('customerSearch').value.toLowerCase(); const res = document.getElementById('customerResults'); res.innerHTML=''; if(query.length<2){res.style.display='none';return;} const filt=allCustomers.filter(c=>(c.name&&c.name.toLowerCase().includes(query))||(c.restaurant&&c.restaurant.toLowerCase().includes(query))); if(filt.length>0){res.style.display='block';filt.slice(0,10).forEach(c=>{const d=document.createElement('div');d.innerHTML=`<b>${c.restaurant||c.name}</b> <span class="text-xs text-gray-500">(${c.restaurant?c.name:''})</span>`;d.onclick=()=>selectCustomer(c);res.appendChild(d)})}else res.style.display='none'};
+        window.selectCustomer = function(c) { selectedCustomer=c; document.getElementById('customerSearch').value=''; document.getElementById('customerResults').style.display='none'; document.getElementById('custRestaurant').innerText=c.restaurant||c.name; document.getElementById('custNameText').innerText=c.restaurant?c.name:''; document.getElementById('selectedCustomerCard').classList.remove('hidden'); document.getElementById('productSection').classList.remove('opacity-50','pointer-events-none'); };
+        window.clearCustomer = function() { selectedCustomer=null; document.getElementById('selectedCustomerCard').classList.add('hidden'); document.getElementById('productSection').classList.add('opacity-50','pointer-events-none'); document.getElementById('cartSection').classList.add('hidden'); cart=[]; renderCart(); };
+        window.searchProduct = function() { const q=document.getElementById('productSearch').value.toLowerCase(); const res=document.getElementById('productResults'); res.innerHTML=''; if(q.length<2){res.style.display='none';return;} const filt=allProducts.filter(p=>(p.name&&p.name.toLowerCase().includes(q))||(p.code&&p.code.toLowerCase().includes(q))); if(filt.length>0){res.style.display='block';filt.slice(0,10).forEach(p=>{const d=document.createElement('div');d.innerHTML=`<div class="flex justify-between"><span>${p.name}</span><span class="text-blue-600">${p.price||0}</span></div><div class="text-xs text-gray-400">Nr. ${p.code}</div>`;d.onclick=()=>addToCart(p);res.appendChild(d)})} };
+        window.addToCart = function(p) { document.getElementById('productSearch').value=''; document.getElementById('productResults').style.display='none'; const ex=cart.find(i=>i.code===p.code); if(ex) ex.qty++; else cart.push({...p,qty:1}); renderCart(); document.getElementById('cartSection').classList.remove('hidden'); };
+        window.renderCart = function() { const tb=document.getElementById('cartTableBody'); tb.innerHTML=''; let tot=0; cart.forEach((i,x)=>{ tot+=(i.price||0)*i.qty; tb.innerHTML+=`<tr><td class="p-2">${i.name}<div class="text-xs text-blue-600 font-bold">Nr. ${i.code}</div></td><td class="p-2 text-center"><input type="number" value="${i.qty}" class="w-10 text-center border rounded" onchange="updateCart(${x},'qty',this.value)"></td><td class="p-2 text-center"><input type="number" value="${i.price}" class="w-16 text-center border rounded" onchange="updateCart(${x},'price',this.value)"></td><td class="p-2 text-center font-bold">${((i.price||0)*i.qty).toFixed(2)}</td><td class="p-2 text-center"><button onclick="removeFromCart(${x})" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`; }); document.getElementById('cartTotal').innerText=tot.toFixed(2); };
+        window.updateCart = function(x,f,v) { v=parseFloat(v); if(f==='qty'&&v<1)v=1; if(f==='price'&&v<0)v=0; cart[x][f]=v; renderCart(); };
+        window.removeFromCart = function(x) { cart.splice(x,1); if(cart.length===0) document.getElementById('cartSection').classList.add('hidden'); renderCart(); };
+        window.submitOrder = async function() { if(!selectedCustomer||cart.length===0) return alert("Leer!"); const btn=document.querySelector('button[onclick="submitOrder()"]'); btn.disabled=true; btn.innerText="..."; const od={ customerName:selectedCustomer.restaurant||selectedCustomer.name, contactPerson:selectedCustomer.name, customerId:selectedCustomer.id, customerAddress:selectedCustomer.address||"", items:cart, totalPrice:parseFloat(document.getElementById('cartTotal').innerText), deliveryDate:document.getElementById('deliveryDate').value, note:document.getElementById('orderNote').value, status:"open", createdAt:serverTimestamp() }; try{ await addDoc(collection(db,"orders"),od); alert("✅ Gespeichert!"); location.reload(); }catch(e){ alert("Fehler: "+e.message); btn.disabled=false; } };
 
-            const filtered = allCustomers.filter(c => 
-                (c.name && c.name.toLowerCase().includes(query)) || 
-                (c.restaurant && c.restaurant.toLowerCase().includes(query))
-            );
-
-            if (filtered.length > 0) {
-                resultsDiv.style.display = 'block';
-                filtered.slice(0, 10).forEach(cust => {
-                    const div = document.createElement('div');
-                    let mainTitle = cust.restaurant ? cust.restaurant : cust.name;
-                    let subTitle = cust.restaurant ? cust.name : "";
-
-                    div.innerHTML = `
-                        <div class="font-bold text-gray-800 text-lg">${mainTitle}</div>
-                        ${subTitle ? `<div class="text-sm text-gray-500"><i class="fas fa-user-circle"></i> ${subTitle}</div>` : ''}
-                    `;
-                    div.onclick = () => selectCustomer(cust);
-                    resultsDiv.appendChild(div);
+        // --- MONITOR LOGIC ---
+        window.loadDashboard = async function() {
+            const dStr = document.getElementById('monitorDate').value;
+            const tb = document.getElementById('dashboardTable');
+            tb.innerHTML = '<tr><td colspan="5" class="p-4 text-center"><i class="fas fa-spinner fa-spin"></i> Lade...</td></tr>';
+            const q = query(collection(db, "orders"), where("deliveryDate", "==", dStr));
+            try {
+                const snap = await getDocs(q); tb.innerHTML = '';
+                if (snap.empty) { tb.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400">Keine Bestellungen.</td></tr>'; return; }
+                snap.forEach(doc => {
+                    const o = doc.data();
+                    let cl="status-open", st="Neu", ic="fa-file-alt";
+                    if (o.status==='packed') { cl="status-packed"; st="Verpackt"; ic="fa-box"; }
+                    else if (o.status==='delivered') { cl="status-delivered"; st="Geliefert"; ic="fa-check"; }
+                    else if (o.status==='failed') { cl="status-failed"; st="Problem!"; ic="fa-exclamation-triangle"; }
+                    let inf = o.status==='delivered' ? (o.paymentMethod==='bar'?'💶 Bar':'📄 Bill') : (o.status==='failed'?`❌ ${o.failureReason}`:`${o.items.length} Pos.`);
+                    tb.innerHTML += `<tr class="hover:bg-slate-50 transition border-b border-gray-100"><td class="p-3 font-bold text-gray-700">${o.customerName}</td><td class="p-3"><span class="${cl} px-2 py-1 rounded text-xs font-bold flex items-center gap-1 w-fit"><i class="fas ${ic}"></i> ${st}</span></td><td class="p-3 font-mono text-blue-600">${o.totalPrice.toFixed(2)}</td><td class="p-3 text-sm text-gray-500">${inf}</td><td class="p-3 text-right"><button onclick="alert('Notiz: ${o.note||'-'}')" class="text-gray-400 hover:text-blue-500"><i class="fas fa-info-circle"></i></button></td></tr>`;
                 });
-            } else {
-                resultsDiv.style.display = 'none';
-            }
+            } catch (e) { console.error(e); }
         };
 
-        window.selectCustomer = function(cust) {
-            selectedCustomer = cust;
-            document.getElementById('customerSearch').value = '';
-            document.getElementById('customerResults').style.display = 'none';
+        // --- 💰 FINANCE LOGIC (جدید) ---
+        window.loadFinanceReport = async function() {
+            const tb = document.getElementById('financeTable');
+            tb.innerHTML = '<tr><td colspan="5" class="p-4 text-center"><i class="fas fa-spinner fa-spin"></i> Lade Finanzen...</td></tr>';
             
-            let displayMain = cust.restaurant ? cust.restaurant : cust.name;
-            let displayName = cust.restaurant ? cust.name : "";
-
-            document.getElementById('custRestaurant').innerText = displayMain;
-            document.getElementById('custNameText').innerText = displayName || "-";
-            document.getElementById('custAddrText').innerText = cust.address || "Keine Adresse";
-            
-            if(!displayName) document.getElementById('custName').style.display = 'none';
-            else document.getElementById('custName').style.display = 'block';
-
-            document.getElementById('selectedCustomerCard').classList.remove('hidden');
-            document.getElementById('productSection').classList.remove('opacity-50', 'pointer-events-none');
-        };
-
-        window.clearCustomer = function() {
-            selectedCustomer = null;
-            document.getElementById('selectedCustomerCard').classList.add('hidden');
-            document.getElementById('productSection').classList.add('opacity-50', 'pointer-events-none');
-            document.getElementById('cartSection').classList.add('hidden');
-            cart = [];
-            renderCart();
-        };
-
-        window.searchProduct = function() {
-            const query = document.getElementById('productSearch').value.toLowerCase();
-            const resultsDiv = document.getElementById('productResults');
-            resultsDiv.innerHTML = '';
-            
-            if (query.length < 2) { resultsDiv.style.display = 'none'; return; }
-
-            const filtered = allProducts.filter(p => 
-                (p.name && p.name.toLowerCase().includes(query)) || 
-                (p.code && p.code.toLowerCase().includes(query)) ||
-                (p.category && p.category.toLowerCase().includes(query))
-            );
-
-            if (filtered.length > 0) {
-                resultsDiv.style.display = 'block';
-                filtered.slice(0, 15).forEach(prod => {
-                    const div = document.createElement('div');
-                    const priceFormatted = prod.price ? prod.price.toFixed(2) : "0.00";
-                    
-                    div.innerHTML = `
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold text-gray-700">${prod.name}</span>
-                            <span class="font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded text-sm">${priceFormatted}</span>
-                        </div>
-                        <div class="flex gap-3 text-xs text-gray-400 mt-1">
-                            <span><i class="fas fa-barcode"></i> ${prod.code}</span>
-                            <span><i class="fas fa-cube"></i> ${prod.unit}</span>
-                        </div>
-                    `;
-                    div.onclick = () => addToCart(prod);
-                    resultsDiv.appendChild(div);
-                });
-            }
-        };
-
-        window.addToCart = function(prod) {
-            document.getElementById('productSearch').value = '';
-            document.getElementById('productResults').style.display = 'none';
-
-            const existing = cart.find(item => item.code === prod.code);
-            if (existing) {
-                existing.qty++;
-            } else {
-                cart.push({ ...prod, qty: 1 });
-            }
-            renderCart();
-            document.getElementById('cartSection').classList.remove('hidden');
-        };
-
-        function renderCart() {
-            const tbody = document.getElementById('cartTableBody');
-            tbody.innerHTML = '';
-            let total = 0;
-
-            cart.forEach((item, index) => {
-                const itemTotal = (item.price || 0) * item.qty;
-                total += itemTotal;
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="p-3 align-middle">
-                        <div class="font-bold text-gray-800 text-sm">${item.name}</div>
-                        <div class="text-sm text-blue-600 font-medium mt-1">Nr. ${item.code}</div>
-                    </td>
-                    
-                    <td class="p-3 align-middle text-center">
-                        <div class="flex justify-center items-center bg-gray-100 rounded-lg inline-flex p-1">
-                            <button onclick="changeQty(${index}, -1)" class="w-8 h-8 bg-white rounded shadow text-gray-600 hover:text-blue-600 font-bold">-</button>
-                            <input type="number" value="${item.qty}" 
-                                   onchange="manualUpdate(${index}, 'qty', this.value)"
-                                   class="w-12 h-8 text-center bg-transparent outline-none font-bold text-gray-700 mx-1 border-b-2 border-transparent focus:border-blue-500 transition">
-                            <button onclick="changeQty(${index}, 1)" class="w-8 h-8 bg-white rounded shadow text-gray-600 hover:text-blue-600 font-bold">+</button>
-                        </div>
-                    </td>
-
-                    <td class="p-3 align-middle text-center">
-                        <input type="number" step="0.05" value="${(item.price || 0).toFixed(2)}" 
-                               onchange="manualUpdate(${index}, 'price', this.value)"
-                               class="w-20 text-center p-1 border rounded bg-white focus:ring-2 focus:ring-blue-400 font-mono text-sm">
-                    </td>
-
-                    <td class="p-3 align-middle text-center font-bold text-gray-700 text-sm">
-                        ${itemTotal.toFixed(2)}
-                    </td>
-                    <td class="p-3 align-middle text-center">
-                        <button onclick="removeItem(${index})" class="text-red-400 hover:text-red-600 p-2"><i class="fas fa-trash-alt"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            document.getElementById('cartTotal').innerText = total.toFixed(2) + " CHF";
-        }
-
-        window.changeQty = function(index, change) {
-            cart[index].qty += change;
-            if (cart[index].qty < 1) cart[index].qty = 1;
-            renderCart();
-        };
-
-        window.manualUpdate = function(index, field, value) {
-            let val = parseFloat(value);
-            if (field === 'qty') {
-                if (val < 1 || isNaN(val)) val = 1;
-                cart[index].qty = val;
-            } else if (field === 'price') {
-                if (val < 0 || isNaN(val)) val = 0;
-                cart[index].price = val;
-            }
-            renderCart(); 
-        };
-
-        window.removeItem = function(index) {
-            cart.splice(index, 1);
-            if (cart.length === 0) document.getElementById('cartSection').classList.add('hidden');
-            renderCart();
-        };
-
-        window.submitOrder = async function() {
-            if (!selectedCustomer || cart.length === 0) return alert("Leer!");
-
-            const btn = document.querySelector('button[onclick="submitOrder()"]');
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Speichern...';
-
-            let mainName = selectedCustomer.restaurant ? selectedCustomer.restaurant : selectedCustomer.name;
-
-            const orderData = {
-                customerName: mainName,
-                contactPerson: selectedCustomer.name,
-                customerId: selectedCustomer.id,
-                customerAddress: selectedCustomer.address || "",
-                items: cart,
-                totalPrice: parseFloat(document.getElementById('cartTotal').innerText),
-                deliveryDate: document.getElementById('deliveryDate').value,
-                note: document.getElementById('orderNote').value,
-                status: "open",
-                createdAt: serverTimestamp()
-            };
+            // دریافت آخرین گزارش‌ها (به ترتیب تاریخ)
+            const q = query(collection(db, "daily_reports"), orderBy("createdAt", "desc"));
 
             try {
-                await addDoc(collection(db, "orders"), orderData);
-                alert("✅ Gespeichert!");
-                location.reload(); 
-            } catch (error) {
-                console.error(error);
-                alert("Fehler: " + error.message);
-                btn.disabled = false;
-                btn.innerHTML = originalText;
+                const snap = await getDocs(q);
+                tb.innerHTML = '';
+                
+                if (snap.empty) {
+                    tb.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400">Keine Finanzberichte gefunden.</td></tr>';
+                    return;
+                }
+
+                snap.forEach(doc => {
+                    const r = doc.data();
+                    const totalExpenses = (r.expenseDiesel || 0) + (r.expenseOther || 0);
+                    
+                    tb.innerHTML += `
+                        <tr class="hover:bg-green-50 transition border-b border-green-100">
+                            <td class="p-3 font-bold text-gray-700">${r.date}</td>
+                            <td class="p-3 text-gray-600"><i class="fas fa-user-circle"></i> ${r.driverName || 'Fahrer'}</td>
+                            <td class="p-3 text-right font-mono text-green-600">+ ${r.totalIncome.toFixed(2)}</td>
+                            <td class="p-3 text-right font-mono text-red-400">- ${totalExpenses.toFixed(2)}</td>
+                            <td class="p-3 text-right font-bold text-xl text-green-800 bg-green-100 border-l-4 border-green-500 rounded-r">
+                                ${r.finalHandover.toFixed(2)} CHF
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (e) {
+                console.error(e); // اگر ارور ایندکس داد باید در کنسول فایربیس ایندکس بسازی
+                if(e.message.includes("requires an index")) {
+                    alert("⚠️ سیستم نیاز به تنظیم اولیه دارد. (Index Error). لطفاً کنسول را چک کنید.");
+                }
             }
         };
 
-        window.changeQty = changeQty;
-        window.manualUpdate = manualUpdate;
-        window.removeItem = removeItem;
-        window.searchCustomer = searchCustomer;
-        window.selectCustomer = selectCustomer;
-        window.clearCustomer = clearCustomer;
-        window.searchProduct = searchProduct;
-        window.addToCart = addToCart;
-        window.submitOrder = submitOrder;
+        window.searchCustomer = searchCustomer; window.selectCustomer = selectCustomer; window.clearCustomer = clearCustomer; window.searchProduct = searchProduct; window.addToCart = addToCart; window.updateCart = updateCart; window.removeFromCart = removeFromCart; window.submitOrder = submitOrder; window.loadDashboard = loadDashboard; window.loadFinanceReport = loadFinanceReport;
     </script>
 </body>
 </html>
