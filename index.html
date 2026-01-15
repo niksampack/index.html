@@ -2,186 +2,282 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Büro & Admin Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sam Pack Admin V7.1 (Super Parser)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
-        .search-results { max-height: 250px; overflow-y: auto; position: absolute; width: 100%; z-index: 50; background: white; border: 1px solid #e5e7eb; display: none; }
-        .search-results div { padding: 12px; cursor: pointer; border-bottom: 1px solid #f3f4f6; transition: 0.2s; }
-        .search-results div:hover { background-color: #eff6ff; }
-        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        .status-open { background-color: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
-        .status-packed { background-color: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
-        .status-delivered { background-color: #dcfce7; color: #166534; border: 1px solid #86efac; }
-        .status-failed { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        :root { --primary: #2c3e50; --accent: #ffc107; --bg: #f8f9fa; }
+        body { background: var(--bg); font-family: 'Segoe UI', sans-serif; padding-bottom: 80px; }
+
+        .sidebar { width: 260px; height: 100vh; position: fixed; top: 0; left: 0; background: var(--primary); color: white; transition: 0.3s; z-index: 1000; overflow-y: auto; }
+        .main-content { margin-left: 260px; padding: 20px; transition: 0.3s; }
+        .nav-btn { padding: 15px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: #adb5bd; transition: 0.2s; border-radius: 0 25px 25px 0; margin-bottom: 5px; }
+        .nav-btn:hover, .nav-btn.active { background: rgba(255,255,255,0.1); color: var(--accent); border-left: 4px solid var(--accent); }
+
+        .mobile-header { display: none; background: var(--primary); color: white; padding: 15px; position: sticky; top:0; z-index: 999; justify-content: space-between; align-items: center; }
+        .mobile-bottom-nav { display: none; position: fixed; bottom: 0; width: 100%; background: white; border-top: 1px solid #ddd; padding: 10px 0; z-index: 1000; justify-content: space-around; }
+        .mob-icon { text-align: center; color: #999; font-size: 0.8rem; }
+        .mob-icon.active { color: var(--primary); }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .main-content { margin-left: 0; padding: 15px; }
+            .mobile-header { display: flex; }
+            .mobile-bottom-nav { display: flex; }
+            .desktop-only { display: none !important; }
+        }
+
+        .card-box { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; }
+        .drop-zone { border: 3px dashed #cbd5e1; border-radius: 15px; padding: 40px; text-align: center; background: #fff; cursor: pointer; transition: 0.3s; }
+        .drop-zone:hover { border-color: var(--accent); background: #fffdf5; }
+        
+        .badge-status { padding: 5px 10px; border-radius: 8px; font-size: 0.85em; }
+        .st-open { background: #e9ecef; color: #495057; }
+        .st-packed { background: #cff4fc; color: #055160; }
+        .st-done { background: #d1e7dd; color: #0f5132; }
+
+        #imgModalContent { width: 100%; height: auto; border-radius: 8px; }
     </style>
 </head>
-<body class="pb-20 text-gray-800">
+<body>
 
-    <div class="bg-slate-800 text-white p-4 shadow-lg sticky top-0 z-40">
-        <div class="flex justify-between items-center max-w-6xl mx-auto">
-            <h1 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-desktop"></i> Admin Panel <span class="text-xs bg-yellow-500 text-black px-1 rounded">MASTER</span></h1>
-            <button onclick="window.location.reload()" class="text-xs bg-slate-600 px-3 py-1.5 rounded hover:bg-slate-500 transition"><i class="fas fa-sync"></i> Refresh</button>
+<div class="mobile-header">
+    <h5 class="m-0 fw-bold"><i class="fa-solid fa-cube text-warning"></i> Sam Pack</h5>
+    <button class="btn btn-sm btn-outline-warning" onclick="location.reload()"><i class="fa fa-sync"></i></button>
+</div>
+
+<div class="sidebar">
+    <div class="p-4 text-center"><h3 class="fw-bold">SAM PACK</h3><small class="text-white-50">Admin V7.1</small></div>
+    <div class="nav-btn active" onclick="nav('dash')" id="d-dash"><i class="fa fa-chart-pie"></i> Übersicht</div>
+    <div class="nav-btn" onclick="nav('import')" id="d-import"><i class="fa fa-cloud-upload"></i> PDF Import</div>
+    <div class="nav-btn" onclick="nav('drivers')" id="d-drivers"><i class="fa fa-truck"></i> Fahrer</div>
+</div>
+
+<div class="main-content">
+    <div id="view-dash">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold">📅 Tagesübersicht</h4>
+            <input type="date" id="dashDate" class="form-control w-auto shadow-sm" onchange="renderDash()">
         </div>
-    </div>
-
-    <div class="max-w-6xl mx-auto p-4 space-y-8">
-
-        <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
-            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2"><span class="bg-blue-600 text-white text-sm px-2 py-1 rounded">NEU</span> Neue Bestellung aufnehmen</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="relative">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">1. Kunde:</label>
-                    <input type="text" id="customerSearch" placeholder="Suche..." class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" onkeyup="searchCustomer()" autocomplete="off">
-                    <div id="customerResults" class="search-results rounded-b-lg shadow-xl"></div>
-                    <div id="selectedCustomerCard" class="hidden mt-2 p-3 bg-green-50 border border-green-200 rounded-lg flex justify-between items-center"><div><div id="custRestaurant" class="font-bold text-green-900"></div><div id="custNameText" class="text-xs text-gray-600"></div></div><button onclick="clearCustomer()" class="text-red-500 text-sm hover:underline">X</button></div>
-                </div>
-                <div id="productSection" class="relative opacity-50 pointer-events-none">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">2. Produkt:</label>
-                    <input type="text" id="productSearch" placeholder="Suche..." class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" onkeyup="searchProduct()" autocomplete="off">
-                    <div id="productResults" class="search-results rounded-b-lg shadow-xl"></div>
-                </div>
-            </div>
-            <div id="cartSection" class="mt-6 hidden">
-                <table class="w-full text-sm text-left border-collapse"><thead class="bg-gray-100 text-gray-600 uppercase text-xs"><tr><th class="p-2">Produkt</th><th class="p-2 text-center">Menge</th><th class="p-2 text-center">Preis</th><th class="p-2 text-center">Summe</th><th class="p-2"></th></tr></thead><tbody id="cartTableBody" class="divide-y divide-gray-100"></tbody></table>
-                <div class="flex justify-between items-center mt-4 pt-4 border-t"><div class="text-xl font-bold text-blue-800">Total: <span id="cartTotal">0.00</span> CHF</div><div class="flex gap-2"><input type="date" id="deliveryDate" class="border rounded p-2"><button onclick="submitOrder()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2 rounded shadow">Speichern</button></div></div>
-                <input type="text" id="orderNote" placeholder="Notiz (optional)..." class="w-full mt-2 p-2 border rounded text-sm bg-gray-50">
-            </div>
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3"><div class="card-box text-center py-3"><small class="text-muted">Umsatz</small><h3 class="fw-bold text-success mb-0" id="totalCHF">0.00</h3></div></div>
+            <div class="col-6 col-md-3"><div class="card-box text-center py-3"><small class="text-muted">Bestellungen</small><h3 class="fw-bold text-primary mb-0" id="totalCount">0</h3></div></div>
         </div>
-
-        <div class="bg-slate-100 p-6 rounded-xl shadow-inner border border-slate-300">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-chart-line text-purple-600"></i> Live Monitor</h2>
-                <div class="flex gap-2 items-center"><label class="text-sm font-bold">Datum:</label><input type="date" id="monitorDate" class="p-2 border rounded shadow-sm text-sm" onchange="loadDashboard()"><button onclick="loadDashboard()" class="bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700 shadow"><i class="fas fa-search"></i></button></div>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left bg-white rounded-lg shadow overflow-hidden">
-                    <thead class="bg-slate-700 text-white uppercase text-xs"><tr><th class="p-3">Kunde</th><th class="p-3">Status (Live)</th><th class="p-3">Total</th><th class="p-3">Info</th><th class="p-3 text-right">Details</th></tr></thead>
-                    <tbody id="dashboardTable" class="divide-y divide-gray-200"><tr><td colspan="5" class="p-4 text-center text-gray-400">Lade Daten...</td></tr></tbody>
+        <div class="card-box p-0 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th>Kunde</th><th>Status</th><th>CHF</th><th class="text-end">Aktion</th></tr></thead>
+                    <tbody id="dashTable"></tbody>
                 </table>
             </div>
         </div>
-
-        <div class="bg-green-50 p-6 rounded-xl shadow border border-green-200">
-            <h2 class="text-xl font-bold text-green-900 mb-4 flex items-center gap-2"><i class="fas fa-sack-dollar"></i> Fahrer Finanzen (Tagesabschluss)</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left bg-white rounded-lg shadow overflow-hidden">
-                    <thead class="bg-green-700 text-white uppercase text-xs">
-                        <tr>
-                            <th class="p-3">Datum</th>
-                            <th class="p-3">Fahrer</th>
-                            <th class="p-3 text-right">Einnahmen (Bar)</th>
-                            <th class="p-3 text-right">Ausgaben (Tank)</th>
-                            <th class="p-3 text-right font-bold">ABGABE (Total)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="financeTable" class="divide-y divide-gray-200">
-                        </tbody>
-                </table>
-            </div>
-        </div>
-
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <div id="view-import" class="d-none">
+        <h4 class="fw-bold mb-3">📄 Rechnungen hochladen</h4>
+        <div class="drop-zone shadow-sm" onclick="document.getElementById('pdfIn').click()">
+            <i class="fa fa-file-pdf fa-3x text-danger mb-3"></i>
+            <h5>PDFs hier ablegen</h5>
+            <p class="text-muted small">Automatische Erkennung (Positionen & Bild)</p>
+            <input type="file" id="pdfIn" hidden multiple accept="application/pdf">
+        </div>
+        <div id="importLog" class="mt-3"></div>
+    </div>
 
-        const firebaseConfig = { apiKey: "AIzaSyCY9TmJwzoJRWFTAjhDFBD0eFMR4YKTHJQ", authDomain: "listapp-96713.firebaseapp.com", projectId: "listapp-96713", storageBucket: "listapp-96713.firebasestorage.app", messagingSenderId: "1044312662356", appId: "1:1044312662356:web:64fd48530c4238127828c1" };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+    <div id="view-drivers" class="d-none">
+        <h4 class="fw-bold mb-3">🚛 Fahrer</h4>
+        <div class="card-box">
+            <div class="input-group mb-3">
+                <input id="drvName" class="form-control" placeholder="Name">
+                <input id="drvPin" class="form-control" placeholder="PIN" style="max-width: 80px;">
+                <button onclick="addDrv()" class="btn btn-dark">+</button>
+            </div>
+            <ul id="drvList" class="list-group list-group-flush"></ul>
+        </div>
+    </div>
+</div>
 
-        let allCustomers = [], allProducts = [], cart = [], selectedCustomer = null;
+<div class="mobile-bottom-nav">
+    <div class="mob-icon active" onclick="nav('dash')" id="m-dash"><i class="fa fa-chart-pie"></i>Dash</div>
+    <div class="mob-icon" onclick="nav('import')" id="m-import"><i class="fa fa-cloud-upload"></i>Import</div>
+    <div class="mob-icon" onclick="nav('drivers')" id="m-drivers"><i class="fa fa-users"></i>Team</div>
+</div>
 
-        window.onload = async function() {
-            const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-            document.getElementById('deliveryDate').valueAsDate = tomorrow;
-            document.getElementById('monitorDate').valueAsDate = tomorrow;
+<div class="modal fade" id="invoiceModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Rechnung</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body text-center bg-dark"><img id="imgModalContent" src="" alt="Lade..."></div>
+        </div>
+    </div>
+</div>
 
-            const custSnap = await getDocs(collection(db, "bexio_contacts")); custSnap.forEach(doc => allCustomers.push({ id: doc.id, ...doc.data() }));
-            const prodSnap = await getDocs(collection(db, "products")); prodSnap.forEach(doc => allProducts.push({ id: doc.id, ...doc.data() }));
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, query, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-            console.log("Ready.");
-            loadDashboard();
-            loadFinanceReport(); // فراخوانی تابع جدید مالی
-        };
+    const firebaseConfig = { apiKey: "AIzaSyCY9TmJwzoJRWFTAjhDFBD0eFMR4YKTHJQ", authDomain: "listapp-96713.firebaseapp.com", projectId: "listapp-96713", storageBucket: "listapp-96713.firebasestorage.app", messagingSenderId: "1044312662356", appId: "1:1044312662356:web:64fd48530c4238127828c1" };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-        // --- ORDER LOGIC ---
-        window.searchCustomer = function() { const query = document.getElementById('customerSearch').value.toLowerCase(); const res = document.getElementById('customerResults'); res.innerHTML=''; if(query.length<2){res.style.display='none';return;} const filt=allCustomers.filter(c=>(c.name&&c.name.toLowerCase().includes(query))||(c.restaurant&&c.restaurant.toLowerCase().includes(query))); if(filt.length>0){res.style.display='block';filt.slice(0,10).forEach(c=>{const d=document.createElement('div');d.innerHTML=`<b>${c.restaurant||c.name}</b> <span class="text-xs text-gray-500">(${c.restaurant?c.name:''})</span>`;d.onclick=()=>selectCustomer(c);res.appendChild(d)})}else res.style.display='none'};
-        window.selectCustomer = function(c) { selectedCustomer=c; document.getElementById('customerSearch').value=''; document.getElementById('customerResults').style.display='none'; document.getElementById('custRestaurant').innerText=c.restaurant||c.name; document.getElementById('custNameText').innerText=c.restaurant?c.name:''; document.getElementById('selectedCustomerCard').classList.remove('hidden'); document.getElementById('productSection').classList.remove('opacity-50','pointer-events-none'); };
-        window.clearCustomer = function() { selectedCustomer=null; document.getElementById('selectedCustomerCard').classList.add('hidden'); document.getElementById('productSection').classList.add('opacity-50','pointer-events-none'); document.getElementById('cartSection').classList.add('hidden'); cart=[]; renderCart(); };
-        window.searchProduct = function() { const q=document.getElementById('productSearch').value.toLowerCase(); const res=document.getElementById('productResults'); res.innerHTML=''; if(q.length<2){res.style.display='none';return;} const filt=allProducts.filter(p=>(p.name&&p.name.toLowerCase().includes(q))||(p.code&&p.code.toLowerCase().includes(q))); if(filt.length>0){res.style.display='block';filt.slice(0,10).forEach(p=>{const d=document.createElement('div');d.innerHTML=`<div class="flex justify-between"><span>${p.name}</span><span class="text-blue-600">${p.price||0}</span></div><div class="text-xs text-gray-400">Nr. ${p.code}</div>`;d.onclick=()=>addToCart(p);res.appendChild(d)})} };
-        window.addToCart = function(p) { document.getElementById('productSearch').value=''; document.getElementById('productResults').style.display='none'; const ex=cart.find(i=>i.code===p.code); if(ex) ex.qty++; else cart.push({...p,qty:1}); renderCart(); document.getElementById('cartSection').classList.remove('hidden'); };
-        window.renderCart = function() { const tb=document.getElementById('cartTableBody'); tb.innerHTML=''; let tot=0; cart.forEach((i,x)=>{ tot+=(i.price||0)*i.qty; tb.innerHTML+=`<tr><td class="p-2">${i.name}<div class="text-xs text-blue-600 font-bold">Nr. ${i.code}</div></td><td class="p-2 text-center"><input type="number" value="${i.qty}" class="w-10 text-center border rounded" onchange="updateCart(${x},'qty',this.value)"></td><td class="p-2 text-center"><input type="number" value="${i.price}" class="w-16 text-center border rounded" onchange="updateCart(${x},'price',this.value)"></td><td class="p-2 text-center font-bold">${((i.price||0)*i.qty).toFixed(2)}</td><td class="p-2 text-center"><button onclick="removeFromCart(${x})" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`; }); document.getElementById('cartTotal').innerText=tot.toFixed(2); };
-        window.updateCart = function(x,f,v) { v=parseFloat(v); if(f==='qty'&&v<1)v=1; if(f==='price'&&v<0)v=0; cart[x][f]=v; renderCart(); };
-        window.removeFromCart = function(x) { cart.splice(x,1); if(cart.length===0) document.getElementById('cartSection').classList.add('hidden'); renderCart(); };
-        window.submitOrder = async function() { if(!selectedCustomer||cart.length===0) return alert("Leer!"); const btn=document.querySelector('button[onclick="submitOrder()"]'); btn.disabled=true; btn.innerText="..."; const od={ customerName:selectedCustomer.restaurant||selectedCustomer.name, contactPerson:selectedCustomer.name, customerId:selectedCustomer.id, customerAddress:selectedCustomer.address||"", items:cart, totalPrice:parseFloat(document.getElementById('cartTotal').innerText), deliveryDate:document.getElementById('deliveryDate').value, note:document.getElementById('orderNote').value, status:"open", createdAt:serverTimestamp() }; try{ await addDoc(collection(db,"orders"),od); alert("✅ Gespeichert!"); location.reload(); }catch(e){ alert("Fehler: "+e.message); btn.disabled=false; } };
+    let gOrders = [];
 
-        // --- MONITOR LOGIC ---
-        window.loadDashboard = async function() {
-            const dStr = document.getElementById('monitorDate').value;
-            const tb = document.getElementById('dashboardTable');
-            tb.innerHTML = '<tr><td colspan="5" class="p-4 text-center"><i class="fas fa-spinner fa-spin"></i> Lade...</td></tr>';
-            const q = query(collection(db, "orders"), where("deliveryDate", "==", dStr));
-            try {
-                const snap = await getDocs(q); tb.innerHTML = '';
-                if (snap.empty) { tb.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400">Keine Bestellungen.</td></tr>'; return; }
-                snap.forEach(doc => {
-                    const o = doc.data();
-                    let cl="status-open", st="Neu", ic="fa-file-alt";
-                    if (o.status==='packed') { cl="status-packed"; st="Verpackt"; ic="fa-box"; }
-                    else if (o.status==='delivered') { cl="status-delivered"; st="Geliefert"; ic="fa-check"; }
-                    else if (o.status==='failed') { cl="status-failed"; st="Problem!"; ic="fa-exclamation-triangle"; }
-                    let inf = o.status==='delivered' ? (o.paymentMethod==='bar'?'💶 Bar':'📄 Bill') : (o.status==='failed'?`❌ ${o.failureReason}`:`${o.items.length} Pos.`);
-                    tb.innerHTML += `<tr class="hover:bg-slate-50 transition border-b border-gray-100"><td class="p-3 font-bold text-gray-700">${o.customerName}</td><td class="p-3"><span class="${cl} px-2 py-1 rounded text-xs font-bold flex items-center gap-1 w-fit"><i class="fas ${ic}"></i> ${st}</span></td><td class="p-3 font-mono text-blue-600">${o.totalPrice.toFixed(2)}</td><td class="p-3 text-sm text-gray-500">${inf}</td><td class="p-3 text-right"><button onclick="alert('Notiz: ${o.note||'-'}')" class="text-gray-400 hover:text-blue-500"><i class="fas fa-info-circle"></i></button></td></tr>`;
-                });
-            } catch (e) { console.error(e); }
-        };
+    window.onload = () => { document.getElementById('dashDate').valueAsDate = new Date(); listenData(); };
+    window.nav = (id) => {
+        document.querySelectorAll('[id^="view-"]').forEach(e => e.classList.add('d-none'));
+        document.getElementById('view-'+id).classList.remove('d-none');
+        document.querySelectorAll('.nav-btn, .mob-icon').forEach(e => e.classList.remove('active'));
+        if(document.getElementById('d-'+id)) document.getElementById('d-'+id).classList.add('active');
+        if(document.getElementById('m-'+id)) document.getElementById('m-'+id).classList.add('active');
+        if(id === 'dash') renderDash();
+    };
 
-        // --- 💰 FINANCE LOGIC (جدید) ---
-        window.loadFinanceReport = async function() {
-            const tb = document.getElementById('financeTable');
-            tb.innerHTML = '<tr><td colspan="5" class="p-4 text-center"><i class="fas fa-spinner fa-spin"></i> Lade Finanzen...</td></tr>';
-            
-            // دریافت آخرین گزارش‌ها (به ترتیب تاریخ)
-            const q = query(collection(db, "daily_reports"), orderBy("createdAt", "desc"));
+    function listenData() {
+        onSnapshot(query(collection(db, "orders"), orderBy("deliveryDate", "desc")), snap => {
+            gOrders = []; snap.forEach(d => gOrders.push({id: d.id, ...d.data()})); renderDash();
+        });
+        onSnapshot(collection(db, "drivers"), snap => {
+            const l = document.getElementById('drvList'); l.innerHTML = '';
+            snap.forEach(d => l.innerHTML += `<li class="list-group-item d-flex justify-content-between">${d.data().name} <button class="btn btn-sm text-danger" onclick="window.delDrv('${d.id}')">×</button></li>`);
+        });
+    }
 
-            try {
-                const snap = await getDocs(q);
-                tb.innerHTML = '';
+    window.renderDash = () => {
+        const date = document.getElementById('dashDate').value;
+        const list = gOrders.filter(o => o.deliveryDate === date);
+        const tbody = document.getElementById('dashTable'); tbody.innerHTML = '';
+        let sum = 0;
+
+        if(list.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Nichts gefunden.</td></tr>'; }
+        else {
+            list.forEach(o => {
+                sum += parseFloat(o.totalAmount || 0);
+                let stClass = 'st-open', stText = 'Offen';
+                if(o.status === 'Packed') { stClass = 'st-packed'; stText = 'Gepackt'; }
+                if(o.status === 'Delivered') { stClass = 'st-done'; stText = 'Geliefert'; }
                 
-                if (snap.empty) {
-                    tb.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400">Keine Finanzberichte gefunden.</td></tr>';
-                    return;
-                }
+                let imgBtn = o.invoiceImg ? `<button class="btn btn-sm btn-light border me-1" onclick="window.showImg('${o.id}')"><i class="fa fa-eye text-primary"></i></button>` : '';
 
-                snap.forEach(doc => {
-                    const r = doc.data();
-                    const totalExpenses = (r.expenseDiesel || 0) + (r.expenseOther || 0);
-                    
-                    tb.innerHTML += `
-                        <tr class="hover:bg-green-50 transition border-b border-green-100">
-                            <td class="p-3 font-bold text-gray-700">${r.date}</td>
-                            <td class="p-3 text-gray-600"><i class="fas fa-user-circle"></i> ${r.driverName || 'Fahrer'}</td>
-                            <td class="p-3 text-right font-mono text-green-600">+ ${r.totalIncome.toFixed(2)}</td>
-                            <td class="p-3 text-right font-mono text-red-400">- ${totalExpenses.toFixed(2)}</td>
-                            <td class="p-3 text-right font-bold text-xl text-green-800 bg-green-100 border-l-4 border-green-500 rounded-r">
-                                ${r.finalHandover.toFixed(2)} CHF
-                            </td>
-                        </tr>
-                    `;
+                // Count items properly
+                let itemCount = (o.items && Array.isArray(o.items)) ? o.items.length : 0;
+                let itemText = itemCount > 0 ? `<span class="text-success"><i class="fa fa-check"></i> ${itemCount} Pos.</span>` : `<span class="text-danger">Keine Pos.</span>`;
+
+                tbody.innerHTML += `
+                <tr>
+                    <td><div class="fw-bold">${o.customerName}</div><div class="small text-muted">${o.bexioId || ''} • ${itemText}</div></td>
+                    <td><span class="badge-status ${stClass}">${stText}</span></td>
+                    <td class="fw-bold">${parseFloat(o.totalAmount).toFixed(2)}</td>
+                    <td class="text-end">${imgBtn}<button class="btn btn-sm btn-outline-danger" onclick="window.delOrd('${o.id}')"><i class="fa fa-trash"></i></button></td>
+                </tr>`;
+            });
+        }
+        document.getElementById('totalCHF').innerText = sum.toFixed(2);
+        document.getElementById('totalCount').innerText = list.length;
+    };
+
+    // --- IMPROVED PDF PARSER V7.1 ---
+    document.getElementById('pdfIn').addEventListener('change', async (e) => {
+        const files = e.target.files; if(!files.length) return;
+        const log = document.getElementById('importLog');
+        log.innerHTML = '<div class="alert alert-info">⏳ Verarbeitung läuft...</div>';
+        const batch = writeBatch(db);
+        let count = 0;
+
+        for(let file of files) {
+            try {
+                const imgData = await pdfToImage(file);
+                const text = await pdfToText(file);
+                const data = parseBexioRobust(text); // NEW PARSER FUNCTION
+                
+                if(data && data.bexioId) {
+                    const ref = doc(collection(db, "orders"));
+                    batch.set(ref, { ...data, invoiceImg: imgData });
+                    count++;
+                }
+            } catch(err) { console.error(err); }
+        }
+
+        if(count > 0) { await batch.commit(); log.innerHTML = `<div class="alert alert-success">✅ ${count} Rechnungen importiert!</div>`; setTimeout(() => nav('dash'), 1500); }
+        else { log.innerHTML = `<div class="alert alert-warning">❌ Fehler: Daten nicht erkannt.</div>`; }
+    });
+
+    async function pdfToImage(file) {
+        const buffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument(buffer).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 1.0 });
+        const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+        canvas.height = viewport.height; canvas.width = viewport.width;
+        await page.render({canvasContext: ctx, viewport: viewport}).promise;
+        return canvas.toDataURL('image/jpeg', 0.7);
+    }
+
+    async function pdfToText(file) {
+        const buffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument(buffer).promise;
+        const page = await pdf.getPage(1);
+        const textContent = await page.getTextContent();
+        return textContent.items.map(i => i.str).join(' | ');
+    }
+
+    // --- THE FIX: ROBUST PARSER ---
+    function parseBexioRobust(text) {
+        // Clean up common Swiss number formats (1'200.00 -> 1200.00) just for parsing logic
+        // But we keep original text for regex matching to be safe
+        
+        const idMatch = text.match(/Rechnung\s+(RE-\d+)/);
+        const dateMatch = text.match(/Datum:\s*\|\s*(\d{2}\.\d{2}\.\d{4})/);
+        const customerMatch = text.split('|')[0].trim();
+        
+        // Try to find Total Amount (handling ' separator)
+        // Regex looks for: Betrag inkl. MWST | 1'015.40
+        const totalMatch = text.match(/Betrag inkl\. MWST\s*\|\s*([\d\.'’]+)/);
+
+        if(!idMatch) return null;
+
+        let dateISO = new Date().toISOString().split('T')[0];
+        if(dateMatch) { const [d, m, y] = dateMatch[1].split('.'); dateISO = `${y}-${m}-${d}`; }
+
+        const items = [];
+        // Updated Regex to match: Number | Text | Qty Unit | Price | Total
+        // Matches: 1 | 001 /Pommes... | 180 kg | 3.40 | 612.00
+        // It allows spaces, dots, and characters in the description
+        const itemRegex = /(\d+)\s*\|\s*([\s\S]*?)\s*\|\s*([\d\.]+(?:\s*[a-zA-ZäöüÄÖÜ%]+)?)\s*\|\s*([\d\.]+)\s*\|\s*([\d\.'’]+)/g;
+        
+        let match;
+        while ((match = itemRegex.exec(text)) !== null) {
+            // Filter: Description usually longer than 2 chars, and row shouldn't contain "Total" in description
+            if(match[2].length > 2 && !match[2].includes('Total') && !match[2].includes('Rechnung')) {
+                items.push({
+                    name: match[2].trim(),
+                    qty: match[3].trim(),
+                    price: parseFloat(match[4].replace(/['’]/g, '')), // Remove ' from price
+                    total: parseFloat(match[5].replace(/['’]/g, ''))  // Remove ' from total
                 });
-            } catch (e) {
-                console.error(e); // اگر ارور ایندکس داد باید در کنسول فایربیس ایندکس بسازی
-                if(e.message.includes("requires an index")) {
-                    alert("⚠️ سیستم نیاز به تنظیم اولیه دارد. (Index Error). لطفاً کنسول را چک کنید.");
-                }
             }
-        };
+        }
 
-        window.searchCustomer = searchCustomer; window.selectCustomer = selectCustomer; window.clearCustomer = clearCustomer; window.searchProduct = searchProduct; window.addToCart = addToCart; window.updateCart = updateCart; window.removeFromCart = removeFromCart; window.submitOrder = submitOrder; window.loadDashboard = loadDashboard; window.loadFinanceReport = loadFinanceReport;
-    </script>
+        return {
+            bexioId: idMatch[1],
+            customerName: customerMatch || "Unbekannt",
+            deliveryDate: dateISO,
+            totalAmount: totalMatch ? parseFloat(totalMatch[1].replace(/['’]/g, '')) : 0,
+            status: 'Open',
+            items: items,
+            createdAt: new Date().toISOString()
+        };
+    }
+
+    window.showImg = (id) => { const o = gOrders.find(x => x.id === id); if(o && o.invoiceImg) { document.getElementById('imgModalContent').src = o.invoiceImg; new bootstrap.Modal(document.getElementById('invoiceModal')).show(); } };
+    window.addDrv = async () => { const n=document.getElementById('drvName').value; const p=document.getElementById('drvPin').value; if(n&&p) await addDoc(collection(db,"drivers"),{name:n,pin:p}); };
+    window.delDrv = async (id) => deleteDoc(doc(db,"drivers",id));
+    window.delOrd = async (id) => { if(confirm("Löschen?")) deleteDoc(doc(db,"orders",id)); };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
